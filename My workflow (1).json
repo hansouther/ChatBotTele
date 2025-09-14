@@ -1,0 +1,556 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "*"
+        ],
+        "additionalFields": {}
+      },
+      "id": "0018d0e5-b7d7-4970-9883-6a2284445d55",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "position": [
+        -1216,
+        592
+      ],
+      "webhookId": "51942fbb-ca0e-4ec4-9423-5fcc7d3c4281",
+      "typeVersion": 1,
+      "credentials": {
+        "telegramApi": {
+          "id": "9tdBd5Agp7PUE2xJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.message?.text }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "notStartsWith",
+              "value2": "/"
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/start",
+              "output": 1
+            },
+            {
+              "operation": "startsWith",
+              "value2": "=/image ",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "990f91a4-2ebc-4123-9bd2-04f1dbf1cbd9",
+      "name": "CheckCommand",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        -256,
+        608
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Error fallback for unsupported commands",
+        "height": 231.22373949579838,
+        "width": 316.1071428571428
+      },
+      "id": "36336a4b-d3bc-441b-bac4-3b5c2b02bd2f",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        832
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "model_temperature",
+              "value": 0.8
+            },
+            {
+              "name": "token_length",
+              "value": 500
+            }
+          ],
+          "string": [
+            {
+              "name": "system_command",
+              "value": "=You are a friendly chatbot. User name is {{ $json?.message?.from?.first_name }}. User system language is {{ $json?.message?.from?.language_code }}. First, detect user text language. Next, provide your reply in the same language. Include several suitable emojis in your answer."
+            },
+            {
+              "name": "bot_typing",
+              "value": "={{ $json?.message?.text.startsWith('/image') ? \"upload_photo\" : \"typing\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "87e83867-ed83-41cb-a518-26195350a23b",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -864,
+        592
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "content": "## Chatbot mode by default\n### (when no command is provided)",
+        "height": 233,
+        "width": 330.5019024637719
+      },
+      "id": "4b6b92ac-cc99-4be5-b7fc-044388a18125",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Welcome message\n### /start",
+        "height": 219.892857142857,
+        "width": 330.7863484403046
+      },
+      "id": "e2273089-36b8-41ac-b3fe-04c86f8d40bf",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        272
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "assistant",
+              "content": "={{ $json.system_command }}"
+            },
+            {
+              "content": "={{ $json.message.text }}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": "={{ $json.token_length }}",
+          "temperature": "={{ $json.model_temperature }}"
+        },
+        "requestOptions": {}
+      },
+      "id": "f7dc8dfd-6aeb-4649-84fc-30a70b974fd5",
+      "name": "Chat_mode",
+      "type": "n8n-nodes-base.openAi",
+      "position": [
+        112,
+        80
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "72UuowcdMaWAgdNA",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "options": {
+          "maxTokens": "={{ $json.token_length }}",
+          "temperature": "={{ $json.model_temperature }}"
+        },
+        "requestOptions": {}
+      },
+      "id": "177a3fe3-5b59-4a11-bc07-e318c81525ee",
+      "name": "Greeting",
+      "type": "n8n-nodes-base.openAi",
+      "position": [
+        112,
+        320
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "72UuowcdMaWAgdNA",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Settings').first().json.message.from.id }}",
+        "text": "={{ $json.message.content }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "8fa6470b-cc58-4463-9bac-d756087c64a7",
+      "name": "Text reply",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        464,
+        208
+      ],
+      "typeVersion": 1,
+      "webhookId": "c04b97af-8501-4899-8d4f-d07a1e853c07",
+      "credentials": {
+        "telegramApi": {
+          "id": "9tdBd5Agp7PUE2xJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.message.from.id }}",
+        "action": "={{ $json.bot_typing }}"
+      },
+      "id": "82e08925-3855-452d-87b6-197da3a7d15a",
+      "name": "Send Typing action",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -656,
+        720
+      ],
+      "typeVersion": 1,
+      "webhookId": "8f97b990-4dd5-4585-8024-b4120f39ed14",
+      "alwaysOutputData": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "9tdBd5Agp7PUE2xJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "775f5e4a-6383-4d4e-bc68-ee4a2f8b55f0",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        -448,
+        608
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "content": "## Create an image\n### /image + request",
+        "height": 233.8785714285713,
+        "width": 329.7428571428562
+      },
+      "id": "57e724f3-c82d-4e11-a509-cf1883ddf8c1",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "={{ $json.message.text.split(' ').slice(1).join(' ') }}",
+        "model": "=/v1/images",
+        "responseFormat": "imageUrl",
+        "options": {
+          "n": 1,
+          "size": "1024x1024"
+        },
+        "requestOptions": {}
+      },
+      "id": "9b4d3794-3ed9-4124-8059-e56299a4800a",
+      "name": "Create an image",
+      "type": "n8n-nodes-base.openAi",
+      "position": [
+        112,
+        608
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "72UuowcdMaWAgdNA",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.from.id }}",
+        "text": "=Sorry, {{ $json.message.from.first_name }}! This command is not supported yet. Please type some text to a chat bot or try this command:\n/image \\[your prompt]\n\nEnter the command, then space and provide your request. Example:\n\n`/image a picture or a cute little kitten with big eyes. Miyazaki studio ghibli style`",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "56495e55-67b9-48cc-acdf-eacbf75d7dff",
+      "name": "Send error message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        464,
+        912
+      ],
+      "typeVersion": 1,
+      "webhookId": "766bafac-0a4f-471e-b2cf-5501974b277b",
+      "credentials": {
+        "telegramApi": {
+          "id": "9tdBd5Agp7PUE2xJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Settings').first().json.message.from.id }}",
+        "file": "={{ $json.url }}",
+        "additionalFields": {
+          "reply_to_message_id": 0
+        }
+      },
+      "id": "dd42f5fd-9e71-4f1f-aabb-1effbc8afaf0",
+      "name": "Send image",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        464,
+        608
+      ],
+      "typeVersion": 1,
+      "webhookId": "6a0bedbf-cd6c-46ee-9d43-66a5fea7ede1",
+      "credentials": {
+        "telegramApi": {
+          "id": "9tdBd5Agp7PUE2xJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message.text",
+              "value": "={{ $json?.message?.text || \"\" }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "c91423ff-ae3e-48ca-9ae4-6f79bd6bdb59",
+      "name": "PreProcessing",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -1040,
+        592
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "administrators"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        368
+      ],
+      "id": "ab422942-45bc-4880-804b-4cac4a2ea9f0",
+      "name": "Get all administrators in a chat",
+      "webhookId": "0c61db96-b3af-463b-bbc5-a21d27863f4d",
+      "credentials": {
+        "telegramApi": {
+          "id": "9tdBd5Agp7PUE2xJ",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "CheckCommand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Greeting": {
+      "main": [
+        [
+          {
+            "node": "Text reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Send Typing action",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat_mode": {
+      "main": [
+        [
+          {
+            "node": "Text reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckCommand": {
+      "main": [
+        [
+          {
+            "node": "Chat_mode",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Greeting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create an image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send error message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PreProcessing": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an image": {
+      "main": [
+        [
+          {
+            "node": "Send image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "PreProcessing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Typing action": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Text reply": {
+      "main": [
+        [
+          {
+            "node": "Get all administrators in a chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send image": {
+      "main": [
+        [
+          {
+            "node": "Get all administrators in a chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f522643d-e885-4e09-bd4e-f598d851e4a3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c825cf5d7c31210ea6b11df8d3fd669c6c7663522fbaea0fe06159709630ddb9"
+  },
+  "id": "FF89l3COnnrykjRf",
+  "tags": []
+}
